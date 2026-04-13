@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="pl" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <title>MJGweb | The Lumina Core</title>
+    
+    <!-- Google Analytics (Analityka ruchu na stronie) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      
+      // Tutaj należy podmienić G-XXXXXXXXXX na własny identyfikator Google Analytics
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        obsidian: '#050505',
+                        'cool-gray': '#8E8E93',
+                        // Kolory bazujące na logo (Cyan i Fiolet)
+                        'brand-cyan': '#00E5FF',
+                        'brand-purple': '#B520FF',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                    },
+                    backgroundImage: {
+                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                        'brand-gradient': 'linear-gradient(to right, #00E5FF, #B520FF)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Baza i szum */
+        body {
+            background-color: #050505;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+        
+        body.locked {
+            overflow: hidden;
+        }
+        
+        .noise-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 40; /* Zmniejszone aby nie zakrywać modala */
+            opacity: 0.04;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* Dynamic Ambient Light (Światło za kursorem w kolorze brandowym) */
+        #ambient-light {
+            position: fixed;
+            top: 0; left: 0;
+            width: 600px; height: 600px;
+            /* Delikatna poświata w kolorze cyan z logo */
+            background: radial-gradient(circle, rgba(0, 229, 255, 0.07) 0%, rgba(5,5,5,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.5s;
+        }
+
+        /* Klasy do animacji Reveal na scrollu */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Glassmorphism karty */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(180deg, rgba(0, 229, 255, 0.1) 0%, rgba(181, 32, 255, 0.0) 100%);
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+
+        .glass-card:hover {
+            transform: scale(1.02);
+            border-color: rgba(0, 229, 255, 0.3);
+            box-shadow: 0 20px 40px -10px rgba(0, 229, 255, 0.1);
+        }
+        
+        .glass-card:hover::before {
+            opacity: 1;
+        }
+
+        /* Efekt skanera (laser) na hover */
+        .glass-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, #00E5FF, #B520FF, transparent);
+            z-index: 20;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .glass-card:hover::after, .btn-scan:hover::after {
+            opacity: 1;
+            animation: scanline 2s ease-in-out infinite;
+        }
+
+        @keyframes scanline {
+            0% { top: 0%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        /* Specyficzna klasa skanowania dla przycisków */
+        .btn-scan::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, #00E5FF, #B520FF, transparent);
+            z-index: 20;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Scrollbar dla modala */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050505;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #B520FF;
+        }
+
+        /* Tło nawigacji pojawiające się przy scrollu */
+        .nav-scrolled {
+            background-color: rgba(5, 5, 5, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 1rem !important;
+            padding-bottom: 1rem !important;
+        }
+
+        /* Klasa ukrywająca navbar podczas scrollowania w dół */
+        .nav-hidden {
+            transform: translateY(-100%);
+        }
+
+        /* Animacja ładowania (Preloader) */
+        #preloader {
+            position: fixed;
+            inset: 0;
+            background-color: #050505;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1), opacity 0.8s ease;
+        }
+
+        #preloader.loaded {
+            transform: translateY(-100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .preloader-logo {
+            margin-bottom: 2rem;
+            animation: pulse-glow 2s infinite alternate;
+        }
+
+        @keyframes pulse-glow {
+            0% { 
+                filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.1)); 
+                transform: scale(0.98); 
+            }
+            100% { 
+                filter: drop-shadow(0 0 30px rgba(181, 32, 255, 0.4)); 
+                transform: scale(1.02); 
+            }
+        }
+
+        .loading-bar-container {
+            width: 200px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .loading-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(to right, #00E5FF, #B520FF);
+            transition: width 1.5s cubic-bezier(0.77, 0, 0.175, 1);
+        }
+
+        .blink-underscore {
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-brand-cyan selection:text-black locked">
+
+    <!-- Preloader -->
+    <div id="preloader">
+        <!-- Logo wygenerowane w całości z kodu (HTML/SVG) -->
+        <div class="preloader-logo flex items-center justify-center font-display font-bold text-4xl md:text-6xl tracking-tighter cursor-default select-none">
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-cyan to-brand-purple">&lt;/&gt; MJG</span>
+            <span class="text-white ml-1 md:ml-2">Web</span>
+            <svg class="h-8 md:h-12 w-auto ml-2 md:ml-3" viewBox="0 0 54 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <!-- gradientUnits="userSpaceOnUse" naprawia znikającą, poziomą linię na środku -->
+                    <linearGradient id="logoGradPreloader" x1="0" y1="0" x2="54" y2="0" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stop-color="#00E5FF" />
+                        <stop offset="100%" stop-color="#B520FF" />
+                    </linearGradient>
+                </defs>
+                <!-- Wszystkie neurony narysowane jako jedna łączna ścieżka z perfekcyjnym dotknięciem okręgów -->
+                <path d="M 2 12 H 18 L 24 6 H 33.5 M 2 19 H 41.5 M 2 26 H 18 L 24 32 H 33.5" stroke="url(#logoGradPreloader)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                <circle cx="37" cy="6" r="3.5" stroke="url(#logoGradPreloader)" stroke-width="3" fill="none"/>
+                <circle cx="45" cy="19" r="3.5" stroke="url(#logoGradPreloader)" stroke-width="3" fill="none"/>
+                <circle cx="37" cy="32" r="3.5" stroke="url(#logoGradPreloader)" stroke-width="3" fill="none"/>
+            </svg>
+        </div>
+
+        <div class="loading-bar-container">
+            <div id="loading-bar" class="loading-bar"></div>
+        </div>
+        <div class="mt-4 font-mono text-[10px] tracking-[0.3em] uppercase text-brand-cyan transition-colors duration-500" id="loading-text">
+            INICJALIZACJA SYSTEMU<span class="blink-underscore">_</span>
+        </div>
+    </div>
+
+    <div class="noise-overlay"></div>
+    <div id="ambient-light"></div>
+
+    <!-- Navigation -->
+    <nav id="navbar" class="fixed top-0 w-full z-40 px-8 py-6 flex justify-between items-center transition-all duration-300 ease-in-out">
+        
+        <!-- Logo Nawigacji (Wersja Czysty Kod) -->
+        <a href="#" class="font-display font-bold text-xl md:text-2xl tracking-tighter flex items-center group cursor-pointer select-none">
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-cyan to-brand-purple">&lt;/&gt; MJG</span>
+            <span class="text-white ml-1">Web</span>
+            <svg class="h-4 md:h-5 w-auto ml-2 transform group-hover:translate-x-1 transition-transform duration-300" viewBox="0 0 54 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="logoGradNav" x1="0" y1="0" x2="54" y2="0" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stop-color="#00E5FF" />
+                        <stop offset="100%" stop-color="#B520FF" />
+                    </linearGradient>
+                </defs>
+                <path d="M 2 12 H 18 L 24 6 H 33.5 M 2 19 H 41.5 M 2 26 H 18 L 24 32 H 33.5" stroke="url(#logoGradNav)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                <circle cx="37" cy="6" r="3.5" stroke="url(#logoGradNav)" stroke-width="3" fill="none"/>
+                <circle cx="45" cy="19" r="3.5" stroke="url(#logoGradNav)" stroke-width="3" fill="none"/>
+                <circle cx="37" cy="32" r="3.5" stroke="url(#logoGradNav)" stroke-width="3" fill="none"/>
+            </svg>
+        </a>
+
+        <div class="flex gap-8 text-sm font-medium">
+            <a href="#work" class="group relative py-1 hover:text-white transition-colors">
+                <span class="relative z-10">Work</span>
+                <div class="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-brand-cyan to-brand-purple transform scale-x-0 origin-left group-hover:scale-x-100 transition-transform duration-300 ease-out"></div>
+            </a>
+            <a href="#collective" class="group relative py-1 hover:text-white transition-colors">
+                <span class="relative z-10">Collective</span>
+                <div class="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-brand-cyan to-brand-purple transform scale-x-0 origin-left group-hover:scale-x-100 transition-transform duration-300 ease-out"></div>
+            </a>
+            <a href="#contact" class="group relative py-1 hover:text-white transition-colors">
+                <span class="relative z-10">Contact</span>
+                <div class="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-brand-cyan to-brand-purple transform scale-x-0 origin-left group-hover:scale-x-100 transition-transform duration-300 ease-out"></div>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative h-screen flex flex-col items-center justify-center px-4 z-10">
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-brand-cyan/10 blur-[120px] rounded-full"></div>
+        
+        <div class="text-center z-10 relative">
+            <p class="text-transparent bg-clip-text bg-gradient-to-r from-brand-cyan to-brand-purple tracking-[0.2em] text-xs font-bold uppercase mb-6 reveal fade-in-delay-1">Advanced Web Engineering</p>
+            <h1 class="font-display text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter mb-6 text-transparent bg-clip-text bg-brand-gradient reveal fade-in-delay-2 drop-shadow-lg max-w-5xl mx-auto">
+                CRAFTING DIGITAL EXCELLENCE.
+            </h1>
+            <p class="text-cool-gray text-lg md:text-xl max-w-2xl mx-auto font-light leading-relaxed reveal fade-in-delay-3">
+                Tworzymy innowacyjne rozwiązania webowe dla nowoczesnego biznesu. Design, który przyciąga. Kod, który skaluje.
+            </p>
+        </div>
+        
+        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 reveal fade-in-delay-4">
+            <span class="text-xs text-cool-gray tracking-widest uppercase">Scroll to explore</span>
+            <div class="w-[1px] h-12 bg-gradient-to-b from-brand-cyan to-transparent"></div>
+        </div>
+    </section>
+
+    <!-- Showcase Grid (9 Projektów) -->
+    <section id="work" class="py-32 px-4 md:px-8 max-w-[1400px] mx-auto z-10 relative">
+        <div class="flex justify-between items-end mb-16 reveal">
+            <h3 class="font-display text-4xl font-bold">The Showcase.</h3>
+            <p class="text-transparent bg-clip-text bg-gradient-to-r from-brand-cyan to-brand-purple font-medium">Selected Works</p>
+        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[400px]">
+
+            <!-- 1. La Maison Dorée (Duża, col-span-2) -->
+            <div class="glass-card md:col-span-2 rounded-[24px] p-8 flex flex-col justify-between group reveal"
+                 data-type="project"
+                 data-title="La Maison Dorée"
+                 data-tag="Management System"
+                 data-year="2025"
+                 data-desc="Kompleksowy system rezerwacji z panelem kelnera, managera i admina."
+                 data-fulldesc="Zaawansowana aplikacja webowa dla branży gastronomicznej. Pełnoprawny system rezerwacji stolików w czasie rzeczywistym z wielopoziomowym dostępem: zawiera dedykowany panel kelnera, rozbudowany moduł dla managera oraz pełen panel administratora. Wyposażona w szereg zaawansowanych funkcjonalności automatyzujących codzienną pracę lokalu i zarządzanie ruchem."
+                 data-tech="Next.js, Node.js, Database"
+                 data-link="https://restaurant-design-ten.vercel.app/"
+                 data-img="./restauracjaSystem.png">
+                <div class="absolute inset-0 opacity-30 group-hover:opacity-60 transition-opacity duration-700 overflow-hidden">
+                    <img src="./restauracjaSystem.png" alt="" class="w-full h-full object-contain" />
+                </div>
+                <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/60 to-obsidian/10"></div>
+                <div class="relative z-10 flex justify-between items-start">
+                    <span class="px-3 py-1 text-xs border border-brand-cyan/40 text-brand-cyan rounded-full backdrop-blur-md">Management System</span>
+                    <span class="text-brand-purple font-medium text-sm">2025</span>
+                </div>
+                <div class="relative z-10 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                    <h4 class="font-display text-3xl font-bold mb-2 group-hover:text-brand-cyan transition-colors">La Maison Dorée</h4>
+                    <p class="text-cool-gray max-w-md">Kompleksowy system rezerwacji z panelem kelnera, managera i admina.</p>
+                </div>
+            </div>
+
+            <!-- 2. Poezja Światła (Mała) -->
+            <div class="glass-card rounded-[24px] p-8 flex flex-col justify-between group reveal" style="transition-delay: 100ms;"
+                 data-type="project"
+                 data-title="Poezja Światła"
+                 data-tag="Photography Portfolio"
+                 data-year="2023"
+                 data-desc="Ekskluzywna fotografia i dyrekcja artystyczna."
+                 data-fulldesc="Minimalistyczne portfolio fotograficzne (A. Kowalski), w którym zdjęcia mówią same za siebie. Bardzo ciemna paleta barw, wielkoformatowa typografia i surowy, elegancki układ. Skupienie na kompozycji wizualnej i unikalnej atmosferze każdego kadru."
+                 data-tech="Svelte, WebGL, Tailwind"
+                 data-link="https://fotograf-page.vercel.app/"
+                 data-img="./PoezjaSwiatla.png">
+                <div class="absolute inset-0 opacity-30 group-hover:opacity-60 transition-opacity duration-700 overflow-hidden">
+                    <img src="./PoezjaSwiatla.png" alt="" class="w-full h-full object-contain" />
+                </div>
+                <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/60 to-obsidian/10"></div>
+                <div class="relative z-10">
+                    <span class="px-3 py-1 text-xs border border-brand-cyan/40 text-brand-cyan rounded-full backdrop-blur-md">Photography</span>
+                </div>
+                <div class="relative z-10 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                    <h4 class="font-display text-2xl font-bold mb-2 group-hover:text-brand-cyan transition-colors">Poezja Światła</h4>
+                    <p class="text-cool-gray text-sm">Ekskluzywna fotografia i dyrekcja artystyczna.</p>
+                </div>
+            </div>
+
+            <!-- 3. Inferno Neapolitana (Mała) -->
+            <div class="glass-card rounded-[24px] p-8 flex flex-col justify-between group reveal"
+                 data-type="project"
+                 data-title="Inferno Neapolitana"
+                 data-tag="Gastronomy"
+                 data-year="2024"
+                 data-desc="Bezwzględny kult ciasta i ognia. Włoska tradycja."
+                 data-fulldesc="Strona dla pizzerii rzemieślniczej. Wykorzystuje mocne kontrasty, krwistą czerwień i ostre typografie, aby oddać gorącą atmosferę pieca opalanego drewnem. Immersyjne zdjęcia potraw wypełniają całe tło, budując potężny apetyt od pierwszej sekundy."
+                 data-tech="React, Framer Motion, CSS Grid"
+                 data-link="https://inferno-pizza.vercel.app/"
+                 data-img="./Inferno.png">
+                <div class="absolute inset-0 opacity-30 group-hover:opacity-70 transition-opacity duration-700 overflow-hidden">
+                    <img src="./Inferno.png" alt="" class="w-full h-full object-contain" />
+                </div>
+                <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/60 to-obsidian/10"></div>
+                <div class="relative z-10">
+                    <span class="px-3 py-1 text-xs border border-brand-cyan/40 text-brand-cyan rounded-full backdrop-blur-md">Gastronomy</span>
+                </div>
+                <div class="relative z-10 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                    <h4 class="font-display text-2xl font-bold mb-2 group-hover:text-brand-cyan transition-colors">Inferno Neapolitana</h4>
+                    <p class="text-cool-gray text-sm">Bezwzględny kult ciasta i ognia. Włoska tradycja.</p>
+                </div>
+            </div>
+
+            <!-- 4. Natura Design (Mała) -->
+            <div class="glass-card rounded-[24px] p-8 flex flex-col justify-between group reveal" style="transition-delay: 100ms;"
+                 data-type="project"
+                 data-title="Natura Design"
+                 data-tag="Landscape Architecture"
+                 data-year="2023"
+                 data-desc="Zaprojektujmy Twoją naturę. Luksusowa architektura krajobrazu."
+                 data-fulldesc="Strona oddająca hołd minimalizmowi i naturalnemu środowisku. Głęboka, butelkowa zieleń w połączeniu z wykwintną, klasyczną typografią podkreśla luksusowy charakter oferowanych projektów ogrodów. Całość ma uspokajać i inspirować naturą."
+                 data-tech="Astro, Tailwind CSS, Lenis Scroll"
+                 data-link="https://naturadesing.vercel.app/"
+                 data-img="./Natura.png">
+                <div class="absolute inset-0 opacity-30 group-hover:opacity-60 transition-opacity duration-700 overflow-hidden">
+                    <img src="./Natura.png" alt="" class="w-full h-full object-contain" />
+                </div>
+                <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/60 to-obsidian/10"></div>
+                <div class="relative z-10">
+                    <span class="px-3 py-1 text-xs border border-brand-cyan/40 text-brand-cyan rounded-full backdrop-blur-md">Landscape Architecture</span>
+                </div>
+                <div class="relative z-10 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                    <h4 class="font-display text-2xl font-bold mb-2 group-hover:text-brand-cyan transition-colors">Natura Design</h4>
+                    <p class="text-cool-gray text-sm">Zaprojektujmy Twoją naturę. Luksusowa architektura krajobrazu.</p>
+                </div>
+            </div>
+
+            <!-- 5. L'artisan (Mała) -->
+            <div class="glass-card rounded-[24px] p-8 flex flex-col justify-between group reveal" style="transition-delay: 200ms;"
+                 data-type="project"
+                 data-title="L'artisan"
+                 data-tag="Dessert & Premium"
+                 data-year="2024"
+                 data-desc="Aksamitne lody włoskie. Mistrzostwo tekstury."
+                 data-fulldesc="Ekskluzywna wizytówka lodziarni rzemieślniczej. Kolorystyka głębokiego, ciemnego fioletu ze złotymi detalami typograficznymi nadaje marce status absolutnego premium. Elegancki układ i precyzja zachęcają do skosztowania autorskiej kolekcji."
+                 data-tech="Three.js, React, Tailwind"
+                 data-link="https://lody-page.vercel.app/"
+                 data-img="./Lody.png">
+                <div class="absolute inset-0 opacity-30 group-hover:opacity-70 transition-opacity duration-700 overflow-hidden">
+                    <img src="./Lody.png" alt="" class="w-full h-full object-contain" />
+                </div>
+                <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/60 to-obsidian/10"></div>
+                <div class="relative z-10">
+                    <span class="px-3 py-1 text-xs border border-brand-cyan/40 text-brand-cyan rounded-full backdrop-blur-md">Dessert & Premium</span>
+                </div>
+                <div class="relative z-10 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                    <h4 class="font-display text-2xl font-bold mb-2 group-hover:text-brand-cyan transition-colors">L'artisan</h4>
+                    <p class="text-cool-gray text-sm">Aksamitne lody włoskie. Mistrzostwo tekstury.</p>
+                </div>
+            </div>
+
+            <!-- 6. Trener.pro (Duża, col-span-2) -->
+            <div class="glass-card md:col-span-2 rounded-[24px] p-8 flex flex-col justify-between group reveal"
+                 data-type="project"
+                 data-title="Trener.pro"
+                 data-tag="Fitness & Coaching"
+                 data-year="2024"
+                 data-desc="Osiągnij formę życia. Bezpiecznie i trwale."
+                 data-fulldesc="Platforma dla trenera personalnego zaprojektowana w oparciu o ciemny motyw i wyrazisty, jaskrawozielony kolor akcentujący. Silny nacisk na czytelne call-to-action (umów konsultację), proste ścieżki użytkownika i motywującą oprawę wizualną."
+                 data-tech="Vue.js, Tailwind, GSAP"
+                 data-link="https://trener-three.vercel.app/"
+                 data-img="./Trener.pro.png">
+                <div class="absolute inset-0 opacity-30 group-hover:opacity-60 transition-opacity duration-700 overflow-hidden">
+                    <img src="./Trener.pro.png" alt="" class="w-full h-full object-contain" />
+                </div>
+                <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/60 to-obsidian/10"></div>
+                <div class="relative z-10 flex justify-between items-start">
+                    <span class="px-3 py-1 text-xs border border-brand-cyan/40 text-brand-cyan rounded-full backdrop-blur-md">Fitness & Coaching</span>
+                    <span class="text-brand-purple font-medium text-sm">2024</span>
+                </div>
+                <div class="relative z-10 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                    <h4 class="font-display text-3xl font-bold mb-2 group-hover:text-brand-cyan transition-colors">Trener.pro</h4>
+                    <p class="text-cool-gray max-w-md">Osiągnij formę życia. Bezpiecznie i trwale.</p>
+                </div>
+            </div>
+
+            <!-- 7. Novovet (Mała) -->
+            <div class="glass-card rounded-[24px] p-8 flex flex-col justify-between group reveal" style="transition-delay: 100ms;"
+                 data-type="project"
+                 data-title="Novovet"
+                 data-tag="Veterinary Clinic"
+                 data-year="2024"
+                 data-desc="Innowacyjna klinika weterynaryjna. Medycyna spotyka empatię."
+                 data-fulldesc="Nowoczesna przestrzeń cyfrowa dla kliniki weterynaryjnej w Szczecinie. Jasny, przyjazny i profesjonalny design z elegancką typografią (połączenie krojów bezszeryfowych z szeryfowymi akcentami). Płynne przewijanie i delikatne gradienty w tle budują zaufanie u pacjentów."
+                 data-tech="Next.js, Framer Motion, Tailwind"
+                 data-link="https://novovet-eta.vercel.app/"
+                 data-img="./Novovet.png">
+                <div class="absolute inset-0 opacity-30 group-hover:opacity-60 transition-opacity duration-700 overflow-hidden">
+                    <img src="./Novovet.png" alt="" class="w-full h-full object-contain" />
+                </div>
+                <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/60 to-obsidian/10"></div>
+                <div class="relative z-10">
+                    <span class="px-3 py-1 text-xs border border-brand-cyan/40 text-brand-cyan rounded-full backdrop-blur-md">Veterinary Clinic</span>
+                </div>
+                <div class="relative z-10 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                    <h4 class="font-display text-2xl font-bold mb-2 group-hover:text-brand-cyan transition-colors">Novovet</h4>
+                    <p class="text-cool-gray text-sm">Innowacyjna klinika weterynaryjna. Medycyna spotyka empatię.</p>
+                </div>
+            </div>
+
+            <!-- 8. Bistro Centrum (Duża, col-span-2) -->
+            <div class="glass-card md:col-span-2 rounded-[24px] p-8 flex flex-col justify-between group reveal"
+                 data-type="project"
+                 data-title="Bistro Centrum"
+                 data-tag="Restaurant & Cafe"
+                 data-year="2024"
+                 data-desc="Smaczne i świeże codziennie! Autorskie śniadania."
+                 data-fulldesc="Jasny, pyszny design dla miejskiego bistro i kawiarni specialty. Układ oparty na asymetrycznej siatce i dużej ilości whitespace'u. Zdjęcia świeżych składników i detali kulinarnych grają główną rolę obok wyraźnej, przyjaznej dla oka typografii."
+                 data-tech="Next.js, Tailwind CSS"
+                 data-link="https://bistro-restaurantumber.vercel.app/"
+                 data-img="./Bistro.png">
+                <div class="absolute inset-0 opacity-30 group-hover:opacity-60 transition-opacity duration-700 overflow-hidden">
+                    <img src="./Bistro.png" alt="" class="w-full h-full object-contain" />
+                </div>
+                <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/60 to-obsidian/10"></div>
+                <div class="relative z-10 flex justify-between items-start">
+                    <span class="px-3 py-1 text-xs border border-brand-cyan/40 text-brand-cyan rounded-full backdrop-blur-md">Restaurant & Cafe</span>
+                    <span class="text-brand-purple font-medium text-sm">2024</span>
+                </div>
+                <div class="relative z-10 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                    <h4 class="font-display text-3xl font-bold mb-2 group-hover:text-brand-cyan transition-colors">Bistro Centrum</h4>
+                    <p class="text-cool-gray max-w-md">Smaczne i świeże codziennie! Autorskie śniadania.</p>
+                </div>
+            </div>
+
+            <!-- 9. JK Service (Mała) -->
+            <div class="glass-card rounded-[24px] p-8 flex flex-col justify-between group reveal" style="transition-delay: 100ms;"
+                 data-type="project"
+                 data-title="JK Service"
+                 data-tag="IT Service & Repair"
+                 data-year="2024"
+                 data-desc="Profesjonalna naprawa elektroniki i diagnostyka sprzętu IT."
+                 data-fulldesc="Strona dla serwisu elektroniki w surowym klimacie terminala. Nawiązuje do estetyki cyber-security i starych systemów komputerowych. Zawiera efektowne animacje tekstu i mroczną kolorystykę z dominującym jaskrawym zielonym, przykuwając uwagę specyficznym, hakerskim Vibe'm."
+                 data-tech="React, Tailwind CSS, Terminal UI"
+                 data-link="https://jkservice.vercel.app/"
+                 data-img="./JK Service.png">
+                <div class="absolute inset-0 opacity-40 group-hover:opacity-70 transition-opacity duration-700 overflow-hidden">
+                    <img src="./JK Service.png" alt="" class="w-full h-full object-contain" />
+                </div>
+                <div class="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/60 to-obsidian/10"></div>
+                <div class="relative z-10">
+                    <span class="px-3 py-1 text-xs border border-brand-cyan/40 text-brand-cyan rounded-full backdrop-blur-md">IT Service & Repair</span>
+                </div>
+                <div class="relative z-10 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                    <h4 class="font-display text-2xl font-bold mb-2 group-hover:text-brand-cyan transition-colors duration-300">JK Service</h4>
+                    <p class="text-cool-gray text-sm">Profesjonalna naprawa elektroniki i diagnostyka sprzętu IT.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- The Collective Section -->
+    <section id="collective" class="py-32 px-4 md:px-8 max-w-[1400px] mx-auto z-10 relative">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 reveal">
+            <div>
+                <h3 class="font-display text-4xl font-bold mb-4">The Collective.</h3>
+                <p class="text-cool-gray max-w-lg leading-relaxed">Dla nas techniczna doskonałość to fundament każdej realizacji. Tworzymy zaawansowane i niezawodne produkty cyfrowe, które pomagają firmom dominować w swoich branżach. Poznaj ekspertów tworzących MJGweb.</p>
+            </div>
+            <p class="text-transparent bg-clip-text bg-gradient-to-r from-brand-cyan to-brand-purple mt-8 md:mt-0 tracking-[0.2em] text-xs uppercase font-bold">MJGweb Core Team</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <!-- Mikołaj Sitek -->
+            <div class="glass-card rounded-[24px] p-10 flex flex-col items-center text-center group reveal cursor-pointer"
+                 data-type="team"
+                 data-name="Mikołaj Sitek"
+                 data-role="Lead Web Developer"
+                 data-img="./Mikolaj_Sitek.png"
+                 data-fulldesc="Mikołaj to architekt naszego kodu i estetyki, legitymujący się tytułem magistra informatyki. Technologie webowe to jego życiowa pasja, którą rozwija od ponad dekady, wdrażając zaawansowane projekty dla wielu komercyjnych marek. Jego obsesją jest bezkompromisowa wydajność i 'Visual Logic' – uważa, że najwyższej klasy kod powinien nie tylko perfekcyjnie działać, ale również cechować się doskonałą architekturą od wewnątrz. W swoich realizacjach łączy rygorystyczne standardy inżynieryjne z nowoczesnym podejściem do designu."
+                 data-skills="React, Next.js, WebGL, UI/UX Architecture, Performance Optimization">
+                <div class="w-40 h-40 shrink-0 rounded-full overflow-hidden mb-8 relative grayscale group-hover:grayscale-0 transition-all duration-700 border border-brand-cyan/20 ring-1 ring-brand-purple/20 ring-offset-4 ring-offset-obsidian shadow-[0_0_20px_rgba(0,229,255,0.2)]">
+                    <img src="./Mikolaj_Sitek.png" alt="Mikołaj Sitek" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-1000">
+                    <div class="absolute inset-0 bg-obsidian/30 group-hover:bg-transparent transition-colors duration-700"></div>
+                </div>
+                <h4 class="font-display text-2xl font-bold mb-2 group-hover:text-brand-cyan transition-colors">Mikołaj Sitek</h4>
+                <p class="text-transparent bg-clip-text bg-gradient-to-r from-brand-cyan to-brand-purple text-xs mb-6 tracking-widest uppercase font-bold">Lead Web Developer</p>
+                <p class="text-cool-gray text-sm font-light leading-relaxed">Fokus na "Visual Logic" i architekturę doznań. Przekłada surową logikę na płynne, wizualne emocje.</p>
+            </div>
+
+            <!-- Gracjan Połomski -->
+            <div class="glass-card rounded-[24px] p-10 flex flex-col items-center text-center group reveal cursor-pointer" style="transition-delay: 150ms;"
+                 data-type="team"
+                 data-name="Gracjan Połomski"
+                 data-role="Senior Web Developer"
+                 data-img="./Gracjan_Polomski.png"
+                 data-fulldesc="Gracjan to wirtuoz mikrointerakcji i animacji. Z dbałością o każdy piksel przenosi wizje projektantów do okna przeglądarki. Specjalizuje się w zaawansowanych bibliotekach animacji (GSAP, Framer Motion) i jest twórcą autorskich rozwiązań z zakresu 'Fluid Motion'. Jeśli na stronie coś porusza się w hipnotyzujący sposób - to na pewno sprawka Gracjana."
+                 data-skills="Vue.js, GSAP, CSS Architecture, Creative Coding, Micro-interactions">
+                <div class="w-40 h-40 shrink-0 rounded-full overflow-hidden mb-8 relative grayscale group-hover:grayscale-0 transition-all duration-700 border border-brand-cyan/20 ring-1 ring-brand-purple/20 ring-offset-4 ring-offset-obsidian shadow-[0_0_20px_rgba(0,229,255,0.2)]">
+                    <img src="./Gracjan_Polomski.png" alt="Gracjan Połomski" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-1000">
+                    <div class="absolute inset-0 bg-obsidian/30 group-hover:bg-transparent transition-colors duration-700"></div>
+                </div>
+                <h4 class="font-display text-2xl font-bold mb-2 group-hover:text-brand-purple transition-colors">Gracjan Połomski</h4>
+                <p class="text-transparent bg-clip-text bg-gradient-to-r from-brand-cyan to-brand-purple text-xs mb-6 tracking-widest uppercase font-bold">Senior Web Developer</p>
+                <p class="text-cool-gray text-sm font-light leading-relaxed">Wirtuoz "Fluid Motion" i bezbłędnej implementacji. Dba o to, by każda interakcja pulsowała życiem premium.</p>
+            </div>
+
+            <!-- Jakub Lewandowski -->
+            <div class="glass-card rounded-[24px] p-10 flex flex-col items-center text-center group reveal cursor-pointer" style="transition-delay: 300ms;"
+                 data-type="team"
+                 data-name="Jakub Lewandowski"
+                 data-role="Account Manager"
+                 data-img="./Jakub_Lewandowski.png"
+                 data-fulldesc="Jakub jest mostem łączącym technologiczną magię z celami biznesowymi naszych klientów. Dzięki szerokiej wiedzy z zakresu zarządzania projektami IT i marketingu, potrafi doradzić optymalne ścieżki rozwoju produktu. Pilnuje harmonogramów, budżetów i najwyższych standardów komunikacji, zapewniając partnerom całkowity spokój podczas trwania projektu."
+                 data-skills="Project Management, Agile, Client Relations, Business Strategy, Tech Translation">
+                <div class="w-40 h-40 shrink-0 rounded-full overflow-hidden mb-8 relative grayscale group-hover:grayscale-0 transition-all duration-700 border border-brand-cyan/20 ring-1 ring-brand-purple/20 ring-offset-4 ring-offset-obsidian shadow-[0_0_20px_rgba(181,32,255,0.2)]">
+                    <img src="./Jakub_Lewandowski.png" alt="Jakub Lewandowski" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-1000">
+                    <div class="absolute inset-0 bg-obsidian/30 group-hover:bg-transparent transition-colors duration-700"></div>
+                </div>
+                <h4 class="font-display text-2xl font-bold mb-2 group-hover:text-brand-cyan transition-colors">Jakub Lewandowski</h4>
+                <p class="text-transparent bg-clip-text bg-gradient-to-r from-brand-cyan to-brand-purple text-xs mb-6 tracking-widest uppercase font-bold">Account Manager</p>
+                <p class="text-cool-gray text-sm font-light leading-relaxed">Architekt relacji. Tłumaczy skomplikowany język technologii na płynny język sukcesu w biznesie.</p>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Footer / CTA -->
+    <section id="contact" class="py-40 px-8 z-10 relative flex flex-col items-center justify-center text-center">
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-brand-purple/10 blur-[100px] rounded-full"></div>
+        <h2 class="font-display text-6xl md:text-8xl font-bold tracking-tighter mb-12 text-transparent bg-clip-text bg-brand-gradient reveal">
+            START THE PULSE.
+        </h2>
+        <button class="group relative px-10 py-5 bg-white text-black font-bold rounded-full overflow-hidden reveal hover:scale-105 transition-all duration-300 shadow-[0_0_30px_rgba(0,229,255,0.3)] hover:shadow-[0_0_50px_rgba(181,32,255,0.5)]">
+            <span class="relative z-10 group-hover:text-white transition-colors duration-500 tracking-wider">LET'S SYNC</span>
+            <div class="absolute inset-0 bg-gradient-to-r from-brand-cyan to-brand-purple transform scale-x-0 origin-left group-hover:scale-x-100 transition-transform duration-500 ease-out z-0"></div>
+        </button>
+    </section>
+
+    <!-- Footer Bottom -->
+    <footer class="w-full py-8 flex flex-col md:flex-row items-center justify-between px-8 text-cool-gray text-xs font-mono relative z-10">
+        <div class="mb-4 md:mb-0">
+            &copy; 2026 MJGweb. All rights reserved.
+        </div>
+        <div class="flex gap-6">
+            <a href="/polityka.html" class="hover:text-brand-cyan transition-colors">Polityka Prywatności</a>
+            <a href="#contact" class="hover:text-brand-purple transition-colors">Kontakt</a>
+        </div>
+    </footer>
+
+    <!-- Modal (Szczegóły Projektu/Osoby) w surowym klimacie archiwum -->
+    <div id="modal-overlay" class="fixed inset-0 z-50 bg-obsidian/80 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-300 flex items-center justify-center p-4">
+        <div id="modal-content" class="w-full max-w-5xl h-auto max-h-[95vh] transform scale-95 opacity-0 transition-all duration-300 relative bg-[#0a0a0a] border border-white/10 shadow-2xl rounded-none flex flex-col overflow-y-auto md:overflow-hidden">
+            
+            <!-- Cienki, okrągły przycisk z krzyżykiem -->
+            <button id="close-modal" class="absolute top-4 right-4 md:top-6 md:right-6 z-50 rounded-full w-10 h-10 flex items-center justify-center border border-white/20 bg-obsidian/40 backdrop-blur-sm group hover:border-brand-cyan/50 transition-all duration-300 overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r from-brand-cyan to-brand-purple opacity-0 group-hover:opacity-30 transition-opacity duration-300 pointer-events-none"></div>
+                <svg class="w-4 h-4 relative z-10 text-white group-hover:text-brand-cyan transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            
+            <div id="modal-body" class="flex flex-col md:flex-row w-full h-full">
+                <!-- Dynamically injected content -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Preloader Logic
+        window.addEventListener('load', () => {
+            const preloader = document.getElementById('preloader');
+            const loadingBar = document.getElementById('loading-bar');
+            const loadingText = document.getElementById('loading-text');
+            
+            // Symulacja ładowania
+            setTimeout(() => {
+                loadingBar.style.width = '100%';
+                setTimeout(() => {
+                    loadingText.innerHTML = 'LUMINA CORE ONLINE<span class="blink-underscore">_</span>';
+                    loadingText.classList.remove('text-brand-cyan');
+                    loadingText.classList.add('text-brand-purple');
+                }, 1000);
+            }, 300);
+
+            // Ukrywanie preloadera i start głównej animacji
+            setTimeout(() => {
+                preloader.classList.add('loaded');
+                document.body.classList.remove('locked'); // odblokowanie scrolla
+                
+                // Odpalanie powitalnych animacji Hero z lekkim opóźnieniem po zniknięciu ekranu
+                setTimeout(() => {
+                    document.querySelectorAll('.fade-in-delay-1').forEach(el => el.classList.add('active'));
+                }, 200);
+                setTimeout(() => {
+                    document.querySelectorAll('.fade-in-delay-2').forEach(el => el.classList.add('active'));
+                }, 400);
+                setTimeout(() => {
+                    document.querySelectorAll('.fade-in-delay-3').forEach(el => el.classList.add('active'));
+                }, 600);
+                setTimeout(() => {
+                    document.querySelectorAll('.fade-in-delay-4').forEach(el => el.classList.add('active'));
+                }, 800);
+            }, 2000); // Całkowity czas pokazywania preloadera
+        });
+
+        // Dynamic Ambient Light (Światło w tle podążające za myszką)
+        const ambientLight = document.getElementById('ambient-light');
+        document.addEventListener('mousemove', (e) => {
+            ambientLight.style.left = `${e.clientX}px`;
+            ambientLight.style.top = `${e.clientY}px`;
+        });
+
+        // Ukrywanie/Pokazywanie Nawigacji na Scrollu (Z dodanym tłem)
+        let lastScrollY = window.scrollY;
+        const navbar = document.getElementById('navbar');
+
+        window.addEventListener('scroll', () => {
+            const currentScrollY = window.scrollY;
+            
+            // Styl dla przesuniętego paska (tło + blur) - dodaje się po zjechaniu w dół
+            if (currentScrollY > 50) {
+                navbar.classList.add('nav-scrolled');
+            } else {
+                navbar.classList.remove('nav-scrolled');
+            }
+            
+            // Ukrywanie paska przy scrollowaniu w dół
+            if (currentScrollY > lastScrollY && currentScrollY > 200) {
+                navbar.classList.add('nav-hidden');
+            } 
+            // Pokazywanie paska przy scrollowaniu w górę
+            else {
+                navbar.classList.remove('nav-hidden');
+            }
+            
+            lastScrollY = currentScrollY;
+        });
+
+        // Scroll Reveal Animation (Intersection Observer)
+        const reveals = document.querySelectorAll('.reveal');
+        
+        const revealOptions = {
+            threshold: 0.15,
+            rootMargin: "0px 0px -50px 0px"
+        };
+
+        const revealObserver = new IntersectionObserver(function(entries, observer) {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+                entry.target.classList.add('active');
+                observer.unobserve(entry.target);
+            });
+        }, revealOptions);
+
+        reveals.forEach(reveal => {
+            revealObserver.observe(reveal);
+        });
+
+        // Modal Logic
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalContent = document.getElementById('modal-content');
+        const modalBody = document.getElementById('modal-body');
+        const closeModalBtn = document.getElementById('close-modal');
+
+        function openModal(data) {
+            let html = '';
+            
+            if (data.type === 'project') {
+                html = `
+                    <!-- Lewa strona (Media) -->
+                    <div class="w-full md:w-1/2 h-56 md:h-auto relative border-b md:border-b-0 md:border-r border-white/5 flex items-start justify-center bg-[#050505] shrink-0 overflow-hidden">
+                        <!-- Subtelne narożniki w klimacie hud/skaner -->
+                        <div class="absolute top-6 left-6 w-4 h-4 border-t border-l border-brand-cyan z-20 opacity-70 pointer-events-none hidden md:block"></div>
+                        <div class="absolute bottom-6 right-6 w-4 h-4 border-b border-r border-brand-purple z-20 opacity-70 pointer-events-none hidden md:block"></div>
+                        
+                        <!-- Ciemniejszy, szary obraz -> Kolor na Hover -->
+                        <img src="${data.img}" class="absolute inset-0 w-full h-full object-contain opacity-50 grayscale transition-all duration-700 hover:grayscale-0 hover:opacity-100 cursor-crosshair" alt="${data.title}">
+                    </div>
+                    
+                    <!-- Prawa strona (Treść) -->
+                    <div class="w-full md:w-1/2 p-6 md:p-12 flex flex-col bg-[#0a0a0a]">
+                        <div class="font-mono text-[10px] md:text-xs text-brand-cyan mb-4 tracking-[0.2em] uppercase pr-8 font-bold">
+                            PLACEHOLDER ARTIFACT LABEL ${data.year || '0000'}
+                        </div>
+                        
+                        <!-- Tytuł eleganckim cienkim krojem -->
+                        <h3 class="font-display text-3xl md:text-5xl font-light mb-4 text-white">${data.title}</h3>
+                        
+                        <!-- Cienka linia odcięcia -->
+                        <div class="h-[1px] w-12 bg-gradient-to-r from-brand-cyan to-brand-purple mb-6 opacity-70"></div>
+                        
+                        <!-- Przytłumiony tekst główny w całości swobodny -->
+                        <div class="text-cool-gray font-light leading-relaxed mb-8 text-sm md:text-base space-y-4">
+                            <p>${data.desc}</p>
+                            <p>${data.fulldesc}</p>
+                        </div>
+                        
+                        <div class="mt-auto">
+                            <!-- Dane techniczne (Tabela) -->
+                            <div class="grid grid-cols-2 gap-4 mb-6 border-t border-white/5 pt-6">
+                                <div>
+                                    <div class="font-mono text-[9px] text-cool-gray uppercase tracking-widest mb-2">Status / Typ</div>
+                                    <div class="font-mono text-xs text-brand-cyan">${data.tag}</div>
+                                </div>
+                                <div>
+                                    <div class="font-mono text-[9px] text-cool-gray uppercase tracking-widest mb-2">Znacznik Czasu</div>
+                                    <div class="font-mono text-xs text-white">${data.year || '2024.EXC'}</div>
+                                </div>
+                            </div>
+
+                            <!-- Tech Stack jako linia poniżej -->
+                            <div class="mb-6">
+                                <div class="font-mono text-[9px] text-cool-gray uppercase tracking-widest mb-2">Tech Stack</div>
+                                <div class="font-mono text-xs text-cool-gray leading-relaxed break-words" title="${data.tech}">${data.tech}</div>
+                            </div>
+
+                            <!-- Przycisk Zobacz Live z gradientem i skanowaniem - TERAZ JAKO AKTYWNY LINK -->
+                            <a href="${data.link}" target="_blank" class="group relative inline-flex items-center justify-center w-full py-4 border border-white/10 overflow-hidden bg-transparent transition-all duration-300 hover:border-brand-cyan/50 btn-scan">
+                                <span class="relative z-10 font-mono text-[10px] md:text-xs uppercase tracking-[0.2em] text-white group-hover:text-brand-cyan transition-colors">
+                                    [ ZOBACZ LIVE ]
+                                </span>
+                                <!-- Tło gradientowe przy hoverze -->
+                                <div class="absolute inset-0 bg-gradient-to-r from-brand-cyan/5 to-brand-purple/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                            </a>
+                        </div>
+                    </div>
+                `;
+            } else if (data.type === 'team') {
+                html = `
+                    <!-- Lewa strona (Media) -->
+                    <div class="w-full md:w-1/2 h-64 md:h-auto relative border-b md:border-b-0 md:border-r border-white/5 flex items-center justify-center bg-[#050505] shrink-0 overflow-hidden">
+                        <!-- Subtelne narożniki w klimacie hud/skaner -->
+                        <div class="absolute top-6 left-6 w-4 h-4 border-t border-l border-brand-purple z-20 opacity-70 pointer-events-none hidden md:block"></div>
+                        <div class="absolute bottom-6 right-6 w-4 h-4 border-b border-r border-brand-cyan z-20 opacity-70 pointer-events-none hidden md:block"></div>
+                        
+                        <!-- Siatka overlay na zdjęciu -->
+                        <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEgMWgyMHYyMEgxem0xOCAxOEwyIDEgMSAyMGgxOHoiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjA1KSIvPjwvc3ZnPg==')] opacity-30 z-10 pointer-events-none mix-blend-overlay"></div>
+                        
+                        <!-- Szary obraz -> Kolor na Hover -->
+                        <img src="${data.img}" class="absolute inset-0 w-full h-full object-cover grayscale opacity-60 transition-all duration-700 hover:grayscale-0 hover:opacity-100 cursor-crosshair" alt="${data.name}">
+                    </div>
+                    
+                    <!-- Prawa strona (Treść) -->
+                    <div class="w-full md:w-1/2 p-6 md:p-12 flex flex-col bg-[#0a0a0a]">
+                        <div class="font-mono text-[10px] md:text-xs text-brand-purple mb-4 tracking-[0.2em] uppercase pr-8 font-bold">
+                            PERSONEL BAZY / CURATOR
+                        </div>
+                        
+                        <!-- Tytuł eleganckim cienkim krojem -->
+                        <h3 class="font-display text-3xl md:text-5xl font-light mb-2 text-white">${data.name}</h3>
+                        <p class="font-mono text-[10px] text-brand-cyan tracking-widest uppercase mb-6">${data.role}</p>
+                        
+                        <!-- Cienka linia odcięcia -->
+                        <div class="h-[1px] w-12 bg-gradient-to-r from-brand-cyan to-brand-purple mb-6 opacity-70"></div>
+
+                        <!-- Przytłumiony tekst główny w całości swobodny -->
+                        <div class="text-cool-gray font-light leading-relaxed mb-8 text-sm md:text-base space-y-4">
+                            <p>${data.fulldesc}</p>
+                        </div>
+                        
+                        <div class="mt-auto">
+                            <!-- Dane techniczne (Tabela) -->
+                            <div class="grid grid-cols-2 gap-4 border-t border-white/5 pt-6">
+                                <div>
+                                    <div class="font-mono text-[9px] text-cool-gray uppercase tracking-widest mb-2">Status</div>
+                                    <div class="font-mono text-xs text-brand-purple">Aktywny</div>
+                                </div>
+                                <div>
+                                    <div class="font-mono text-[9px] text-cool-gray uppercase tracking-widest mb-2">Główny Skillset</div>
+                                    <div class="font-mono text-xs text-white leading-relaxed break-words" title="${data.skills}">${data.skills}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            modalBody.innerHTML = html;
+            
+            // Pokaż modal
+            modalOverlay.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+            }, 50);
+            
+            // Zablokuj scrollowanie tła
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modalOverlay.classList.add('opacity-0', 'pointer-events-none');
+                document.body.style.overflow = ''; // Przywróć scrollowanie
+            }, 300);
+        }
+
+        // Dodanie listenerów do kart
+        document.querySelectorAll('.glass-card[data-type]').forEach(card => {
+            card.addEventListener('click', () => {
+                openModal(card.dataset);
+            });
+        });
+
+        // Zamknięcie modala (krzyżyk i tło)
+        closeModalBtn.addEventListener('click', closeModal);
+        modalOverlay.addEventListener('click', (e) => {
+            if(e.target === modalOverlay) closeModal();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+<svg viewBox="0 0 54 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="logoGradFavicon" x1="0" y1="0" x2="54" y2="0" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#00E5FF" />
+            <stop offset="100%" stop-color="#B520FF" />
+        </linearGradient>
+    </defs>
+    <path d="M 2 12 H 18 L 24 6 H 33.5 M 2 19 H 41.5 M 2 26 H 18 L 24 32 H 33.5" stroke="url(#logoGradFavicon)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <circle cx="37" cy="6" r="3.5" stroke="url(#logoGradFavicon)" stroke-width="4" fill="none"/>
+    <circle cx="45" cy="19" r="3.5" stroke="url(#logoGradFavicon)" stroke-width="4" fill="none"/>
+    <circle cx="37" cy="32" r="3.5" stroke="url(#logoGradFavicon)" stroke-width="4" fill="none"/>
+</svg>

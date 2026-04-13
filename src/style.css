@@ -1,0 +1,241 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@300;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Baza i szum */
+body {
+    background-color: #050505;
+    color: #ffffff;
+    overflow-x: hidden;
+}
+
+body.locked {
+    overflow: hidden;
+}
+
+.noise-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 40;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Dynamic Ambient Light */
+#ambient-light {
+    position: fixed;
+    top: 0; left: 0;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0, 229, 255, 0.07) 0%, rgba(5,5,5,0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.5s;
+}
+
+/* Reveal na scrollu */
+.reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Glassmorphism karty */
+.glass-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.glass-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(180deg, rgba(0, 229, 255, 0.1) 0%, rgba(181, 32, 255, 0.0) 100%);
+    opacity: 0;
+    transition: opacity 0.4s;
+}
+
+.glass-card:hover {
+    transform: scale(1.02);
+    border-color: rgba(0, 229, 255, 0.3);
+    box-shadow: 0 20px 40px -10px rgba(0, 229, 255, 0.1);
+}
+
+.glass-card:hover::before {
+    opacity: 1;
+}
+
+/* Efekt skanera na hover */
+.glass-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 2px;
+    background: linear-gradient(90deg, transparent, #00E5FF, #B520FF, transparent);
+    z-index: 20;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.glass-card:hover::after, .btn-scan:hover::after {
+    opacity: 1;
+    animation: scanline 2s ease-in-out infinite;
+}
+
+/* Włączanie animacji skanowania gdy element pojawia się na ekranie (urządzenia mniejsze/dotykowe) */
+@media (max-width: 768px), (hover: none) {
+    .glass-card.in-view::after, .btn-scan.in-view::after {
+        opacity: 0.6;
+        animation: scanline 2.5s ease-in-out 1;
+    }
+    
+    /* Przyciski w modalu na mobilce animują się ciągle, aby ułatwić interakcję bez hoveru */
+    #modal-content .btn-scan::after {
+        opacity: 0.6;
+        animation: scanline 3s ease-in-out infinite !important;
+    }
+    
+    /* Dodatkowo pulsujący gradient na tych przyciskach */
+    #modal-content .group > .absolute.inset-0.bg-gradient-to-r,
+    #close-modal .absolute.inset-0.bg-gradient-to-r {
+        animation: mobile-button-pulse 2s ease-in-out infinite alternate !important;
+    }
+}
+
+@keyframes mobile-button-pulse {
+    0% { opacity: 0.05; }
+    100% { opacity: 0.4; }
+}
+
+@keyframes scanline {
+    0% { top: 0%; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+}
+
+/* Skanowanie dla przycisków */
+.btn-scan::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 2px;
+    background: linear-gradient(90deg, transparent, #00E5FF, #B520FF, transparent);
+    z-index: 20;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+@keyframes ray-down {
+    0% { top: -200px; opacity: 0; }
+    10% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+}
+
+.animate-ray-down {
+    position: absolute;
+    animation: ray-down 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #050505;
+}
+::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #B520FF;
+}
+
+/* Tło nawigacji przy scrollu */
+.nav-scrolled {
+    background-color: rgba(5, 5, 5, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+}
+
+/* Ukrycie navbar przy scrollowaniu w dół */
+.nav-hidden {
+    transform: translateY(-100%);
+}
+
+/* Preloader */
+#preloader {
+    position: fixed;
+    inset: 0;
+    background-color: #050505;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1), opacity 0.8s ease;
+}
+
+#preloader.loaded {
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.preloader-logo {
+    margin-bottom: 2rem;
+    animation: pulse-glow 2s infinite alternate;
+}
+
+@keyframes pulse-glow {
+    0% {
+        filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.1));
+        transform: scale(0.98);
+    }
+    100% {
+        filter: drop-shadow(0 0 30px rgba(181, 32, 255, 0.4));
+        transform: scale(1.02);
+    }
+}
+
+.loading-bar-container {
+    width: 200px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+}
+
+.loading-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(to right, #00E5FF, #B520FF);
+    transition: width 1.5s cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+.blink-underscore {
+    animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
