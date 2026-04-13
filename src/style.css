@@ -179,12 +179,29 @@ html.mjgweb-skip-preloader body.locked {
 }
 
 /* Tło nawigacji przy scrollu */
-.nav-scrolled {
+nav#navbar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
     background-color: rgba(5, 5, 5, 0.95);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    pointer-events: none;
+}
+
+.nav-scrolled {
     padding-top: 1rem !important;
     padding-bottom: 1rem !important;
+    background-color: transparent !important;
+    backdrop-filter: none !important;
+    border-bottom: none !important;
+}
+
+.nav-scrolled::before {
+    opacity: 1;
 }
 
 /* Ukrycie navbar przy scrollowaniu w dół */
