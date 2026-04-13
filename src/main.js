@@ -405,3 +405,35 @@ document.addEventListener('click', (e) => {
         }, 500);
     }
 });
+
+// Contact Form Handling
+const contactForm = document.querySelector('#contact form');
+if (contactForm) {
+    contactForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const submitBtn = contactForm.querySelector('button[type="submit"]');
+        const originalContent = submitBtn.innerHTML;
+        
+        submitBtn.innerHTML = '<span class="relative z-10 text-brand-cyan tracking-wider font-bold">WYSYŁANIE...</span><div class="absolute inset-0 bg-white/5 z-0 pointer-events-none"></div>';
+        submitBtn.disabled = true;
+        
+        // Simulate network request
+        setTimeout(() => {
+            contactForm.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-8 text-center animate-fade-in">
+                    <div class="w-16 h-16 mb-6 rounded-full bg-brand-cyan/20 flex items-center justify-center border border-brand-cyan/50 shadow-[0_0_30px_rgba(0,229,255,0.3)]">
+                        <svg class="w-8 h-8 text-brand-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-display font-bold text-white mb-3">Wiadomość wysłana!</h3>
+                    <p class="text-cool-gray text-sm md:text-base max-w-md mx-auto">
+                        Dziękujemy za kontakt. Odezwiemy się wkrótce, by zaplanować naszą współpracę.
+                    </p>
+                </div>
+            `;
+        }, 1500);
+    });
+}
+
