@@ -92,6 +92,39 @@ window.addEventListener('scroll', () => {
     lastScrollY = currentScrollY;
 });
 
+// Mobile Menu Logic
+const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+const navLinks = document.getElementById('nav-links');
+
+if (mobileMenuBtn && navLinks) {
+    const toggleMenu = () => {
+        mobileMenuBtn.classList.toggle('active');
+        
+        const isActive = mobileMenuBtn.classList.contains('active');
+        
+        if (isActive) {
+            navLinks.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-[-20px]');
+            navLinks.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0');
+            document.body.classList.add('locked');
+        } else {
+            navLinks.classList.add('opacity-0', 'pointer-events-none', 'translate-y-[-20px]');
+            navLinks.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0');
+            document.body.classList.remove('locked');
+        }
+    };
+
+    mobileMenuBtn.addEventListener('click', toggleMenu);
+
+    // Zamknij menu po kliknięciu w link na mobilce
+    navLinks.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth < 768 && mobileMenuBtn.classList.contains('active')) {
+                toggleMenu();
+            }
+        });
+    });
+}
+
 // Scroll Reveal Animation
 const reveals = document.querySelectorAll('.reveal');
 
