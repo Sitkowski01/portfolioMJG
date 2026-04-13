@@ -1,10 +1,28 @@
 import './style.css'
 
+function triggerHeroFadeIns(fast) {
+    const step = fast ? 80 : 200;
+    const base = fast ? 0 : 200;
+    setTimeout(() => document.querySelectorAll('.fade-in-delay-1').forEach(el => el.classList.add('active')), base);
+    setTimeout(() => document.querySelectorAll('.fade-in-delay-2').forEach(el => el.classList.add('active')), base + step);
+    setTimeout(() => document.querySelectorAll('.fade-in-delay-3').forEach(el => el.classList.add('active')), base + step * 2);
+    setTimeout(() => document.querySelectorAll('.fade-in-delay-4').forEach(el => el.classList.add('active')), base + step * 3);
+}
+
 // Preloader Logic
 window.addEventListener('load', () => {
+    const skipArrival = document.documentElement.classList.contains('mjgweb-skip-preloader');
     const preloader = document.getElementById('preloader');
     const loadingBar = document.getElementById('loading-bar');
     const loadingText = document.getElementById('loading-text');
+
+    if (skipArrival && preloader) {
+        document.body.classList.remove('locked');
+        preloader.classList.add('loaded');
+        document.documentElement.classList.remove('mjgweb-skip-preloader');
+        triggerHeroFadeIns(true);
+        return;
+    }
 
     if (preloader && loadingBar && loadingText) {
         setTimeout(() => {
@@ -62,6 +80,7 @@ let lastScrollY = window.scrollY;
 const navbar = document.getElementById('navbar');
 
 window.addEventListener('scroll', () => {
+    if (!navbar) return;
     const currentScrollY = window.scrollY;
 
     if (currentScrollY > 50) {
@@ -281,10 +300,12 @@ document.querySelectorAll('.glass-card[data-type]').forEach(card => {
     });
 });
 
-closeModalBtn.addEventListener('click', closeModal);
-modalOverlay.addEventListener('click', (e) => {
-    if (e.target === modalOverlay) closeModal();
-});
+if (closeModalBtn && modalOverlay) {
+    closeModalBtn.addEventListener('click', closeModal);
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) closeModal();
+    });
+}
 
 // Cookie Consent Logic
 document.addEventListener('DOMContentLoaded', () => {
@@ -319,9 +340,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+function isNavigationToHome(href) {
+    if (!href) return false;
+    const path = href.split('?')[0].split('#')[0];
+    const normalized = path.replace(/\/$/, '') || '/';
+    return (
+        normalized === '/' ||
+        normalized === '/index.html' ||
+        normalized.endsWith('/index.html') ||
+        path === 'index.html' ||
+        path === './index.html' ||
+        path === './'
+    );
+}
+
 // Page Transition Logic
 const transitionOverlay = document.createElement('div');
 transitionOverlay.className = 'fixed inset-0 z-[99999] bg-[#050505] pointer-events-none transition-opacity duration-500 ease-in-out';
+
+const skipPreloaderArrival = document.documentElement.classList.contains('mjgweb-skip-preloader');
 
 if (!document.getElementById('preloader')) {
     transitionOverlay.style.opacity = '1';
@@ -332,6 +369,14 @@ if (!document.getElementById('preloader')) {
         setTimeout(() => {
             transitionOverlay.style.opacity = '0';
         }, 50);
+    });
+} else if (skipPreloaderArrival) {
+    transitionOverlay.style.opacity = '1';
+    document.body.appendChild(transitionOverlay);
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            transitionOverlay.style.opacity = '0';
+        });
     });
 } else {
     transitionOverlay.style.opacity = '0';
@@ -348,6 +393,12 @@ document.addEventListener('click', (e) => {
     const isInternalPage = href.startsWith('/') || href.startsWith('./') || href.includes('.html');
     if (isInternalPage && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
         e.preventDefault();
+        if (isNavigationToHome(href)) {
+            try {
+                sessionStorage.setItem('mjgweb_skip_preloader', '1');
+            } catch (err) {}
+        }
+        transitionOverlay.style.pointerEvents = 'auto';
         transitionOverlay.style.opacity = '1';
         setTimeout(() => {
             window.location.href = href;

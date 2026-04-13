@@ -20,6 +20,16 @@
     <script type="module" src="/src/main.js"></script>
 </head>
 <body class="antialiased selection:bg-brand-cyan selection:text-black locked">
+    <script>
+        (function () {
+            try {
+                if (sessionStorage.getItem('mjgweb_skip_preloader')) {
+                    sessionStorage.removeItem('mjgweb_skip_preloader');
+                    document.documentElement.classList.add('mjgweb-skip-preloader');
+                }
+            } catch (e) {}
+        })();
+    </script>
 
     <!-- Preloader -->
     <div id="preloader">

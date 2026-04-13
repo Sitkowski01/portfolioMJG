@@ -15,6 +15,14 @@ body.locked {
     overflow: hidden;
 }
 
+/* Pomijanie preloadera przy powrocie z podstron (np. polityka) — bez migania ekranu ładowania */
+html.mjgweb-skip-preloader #preloader {
+    display: none !important;
+}
+html.mjgweb-skip-preloader body.locked {
+    overflow: auto !important;
+}
+
 .noise-overlay {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
