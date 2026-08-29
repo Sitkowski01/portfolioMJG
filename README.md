@@ -12,7 +12,7 @@ oświetleniem tła podążającym za kursorem.
 - Prezentacja zespołu i realizacji studia
 - **Karty projektów w oknie modalnym** — szczegóły bez opuszczania strony
 - Animowane światło tła i drobne efekty interakcji
-
+- Formularz kontaktowy — ⚠ zaślepka interfejsu, patrz „Czego tu nie ma"
 - Osobna podstrona z polityką prywatności
 - Menu mobilne i pełna responsywność
 
