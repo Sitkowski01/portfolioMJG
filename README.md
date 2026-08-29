@@ -4,6 +4,9 @@ Witryna studia webowego MJGweb: prezentacja zespołu i realizacji, karty projekt
 otwierane w oknie modalnym oraz kontakt. Ciemna, techniczna estetyka z animowanym
 oświetleniem tła podążającym za kursorem.
 
+> To repozytorium jest **wcześniejszą wersją** strony studia. Na produkcji, pod
+> domeną studia, działa nowsza — ten kod nie jest z nią tożsamy.
+
 ## Co zawiera
 
 - **Ekran wczytywania** z paskiem postępu i animowanym tekstem
