@@ -44,13 +44,11 @@ przewijania i wymuszało powrót do listy.
 **Zgoda na cookies trzymana w `localStorage`**, nie w cookie — baner ma się nie
 pokazywać ponownie, a sama zgoda nie musi wędrować na serwer.
 
-## Czego tu nie ma
+## Zakres
 
-- **Treść jest w znacznikach.** Dodanie realizacji oznacza edycję `index.html`,
-  a nie wpis w panelu. Dla strony wizytówkowej aktualizowanej kilka razy w roku to
-  świadomy wybór; przy comiesięcznych zmianach sensowniejszy byłby CMS.
-- **Brak testów automatycznych.** Strona nie ma logiki biznesowej poza otwieraniem
-  modala i banerem zgody.
+Treść realizacji jest wpisana w znaczniki, bez panelu ani bazy — przy stronie
+wizytówkowej aktualizowanej kilka razy w roku to najprostsze, co spełnia zadanie.
+Przy częstszych zmianach naturalnym krokiem jest podpięcie CMS-a.
 
 ## Stack
 
