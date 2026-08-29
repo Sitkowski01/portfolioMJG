@@ -12,7 +12,7 @@ oświetleniem tła podążającym za kursorem.
 - Prezentacja zespołu i realizacji studia
 - **Karty projektów w oknie modalnym** — szczegóły bez opuszczania strony
 - Animowane światło tła i drobne efekty interakcji
-- Formularz kontaktowy
+
 - Osobna podstrona z polityką prywatności
 - Menu mobilne i pełna responsywność
 
@@ -50,7 +50,11 @@ pokazywać ponownie, a sama zgoda nie musi wędrować na serwer.
   świadomy wybór; przy comiesięcznych zmianach sensowniejszy byłby CMS.
 - **Brak testów automatycznych.** Strona nie ma logiki biznesowej poza otwieraniem
   modala i banerem zgody.
-- Formularz kontaktowy korzysta z usługi zewnętrznej — nie ma tu własnego backendu.
+- 🔴 **Formularz kontaktowy nie wysyła wiadomości.** `submit` jest przechwytywany,
+  po 1,5 sekundy pojawia się ekran potwierdzenia — i na tym koniec. To zaślepka
+  interfejsu, nie działający kanał kontaktu; realny kontakt idzie przez adres
+  i telefon w stopce. Podpięcie usługi pocztowej albo własnego punktu końcowego
+  to jedna funkcja w `src/main.js` w miejscu `setTimeout`.
 
 ## Stack
 
