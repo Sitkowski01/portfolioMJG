@@ -4,8 +4,6 @@ Witryna studia webowego MJGweb: prezentacja zespołu i realizacji, karty projekt
 otwierane w oknie modalnym oraz kontakt. Ciemna, techniczna estetyka z animowanym
 oświetleniem tła podążającym za kursorem.
 
-**Na żywo:** [mjgweb.pl](https://mjgweb.pl)
-
 ## Co zawiera
 
 - **Ekran wczytywania** z paskiem postępu i animowanym tekstem
